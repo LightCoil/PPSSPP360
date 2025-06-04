@@ -1,109 +1,40 @@
-CXX          := g++
-CXXFLAGS     := -std=gnu++11 -O2 -Wall -Wextra \
-                -Icore \
-                -Iaudio \
-                -Igfx \
-                -Igles \
-                -Ihe \
-                -Ijit \
-                -Iui \
-                -Iumd \
-                -Iplatform \
-                -I./      # если понадобятся файлы в корне (например, save_state_util)
+# Makefile для PPSSPP360 на Xbox 360 (libXenon)
+CROSS_COMPILE ?= xenon-               # префикс кросс-компилятора (можно задать извне)
+CC := $(CROSS_COMPILE)gcc
+CXX := $(CROSS_COMPILE)g++
+AR := $(CROSS_COMPILE)ar
 
-# ------------------------------------------------
-# Настройки линковки
-# ------------------------------------------------
-LDFLAGS      := -lxenon -lxenos -lxaudio2 -lpng -lz
+# Пути к исходникам
+SRC_DIRS := core gfx gles hle jit locale platform ui umd build audio
+SOURCES := \
+    main.cpp main_jit.cpp psp_display.cpp save_state_util.cpp \
+    $(foreach d,$(SRC_DIRS),$(wildcard $(d)/*.cpp))
 
-# ------------------------------------------------
-# Папки с исходниками
-# ------------------------------------------------
-CORE_DIR     := core
-AUDIO_DIR    := audio
-GFX_DIR      := gfx
-GLES_DIR     := gles
-HLE_DIR      := hle
-JIT_DIR      := jit
-UI_DIR       := ui
-UMD_DIR      := umd
-PLATFORM_DIR := platform
+# Опции компиляции
+CXXFLAGS := -O2 -std=gnu++11 -Wall -fno-exceptions -fno-rtti \
+    -m32 -D__LIBXENON__ -D__ppc__ -DMSB_FIRST -DBYTE_ORDER=BIG_ENDIAN
+INCLUDE_DIRS := 
 
-# ------------------------------------------------
-# Список всех исходников (.cpp)
-# ------------------------------------------------
-SRCS := \
-  $(CORE_DIR)/cpu_state.cpp \
-  $(CORE_DIR)/ppc_memory.cpp \
-  $(CORE_DIR)/cpu.cpp \
-  $(CORE_DIR)/decoder.cpp \
-  $(CORE_DIR)/loader.cpp \
-  $(CORE_DIR)/syscall_handler.cpp \
-  $(CORE_DIR)/iso_reader.cpp \
-  $(CORE_DIR)/iso_util.cpp \
-  $(CORE_DIR)/config.cpp \
-  $(CORE_DIR)/save_state.cpp \
-  \
-  $(JIT_DIR)/jit_compiler.cpp \
-  $(JIT_DIR)/jit_block.cpp \
-  $(JIT_DIR)/jit_emitter.cpp \
-  $(JIT_DIR)/jit_interrupt_bridge.cpp \
-  $(JIT_DIR)/jit_runtime.cpp \
-  \
-  $(HLE_DIR)/hle_kernel.cpp \
-  $(HLE_DIR)/hle_eboot_loader.cpp \
-  \
-  $(UMD_DIR)/umd_mount.cpp \
-  \
-  $(AUDIO_DIR)/audio_output.cpp \
-  \
-  $(GFX_DIR)/texture_utils.cpp \
-  $(GFX_DIR)/render.cpp \
-  \
-  $(GLES_DIR)/gl_utils.cpp \
-  \
-  $(UI_DIR)/ui_manager.cpp \
-  $(UI_DIR)/ui_renderer.cpp \
-  $(UI_DIR)/ui_mainmenu.cpp \
-  $(UI_DIR)/ui_pausemenu.cpp \
-  $(UI_DIR)/ui_gamebrowser.cpp \
-  $(UI_DIR)/ui_settingsmenu.cpp \
-  $(UI_DIR)/ui_statesmenu.cpp \
-  $(UI_DIR)/ui_slider.cpp \
-  \
-  $(PLATFORM_DIR)/xenon_gpu.cpp \
-  \
-  main.cpp \
-  save_state_util.cpp
+# Опции линковки
+LDFLAGS := -m32 
+LIBDIRS := 
+LIBS := -lxenos -lconsole -linput -lusb -lxenon
 
-# ------------------------------------------------
-# Соответствующие заголовки (для упрощения: все *.h будут искаться через -I)
-# ------------------------------------------------
-HEADERS := \
-  core/*.h \
-  audio/*.h \
-  gfx/*.h \
-  gles/*.h \
-  hle/*.h \
-  jit/*.h \
-  ui/*.h \
-  umd/*.h \
-  platform/*.h
+# Цель по умолчанию: собираем исходники в default.elf
+all: default.elf
 
-# ------------------------------------------------
-# Цель: сборка ELF-бинарника для Xenon
-# ------------------------------------------------
-TARGET_ELF := ppsspp360.elf
+# Правило сборки ELF-файла
+default.elf: $(SOURCES)
+	$(CXX) $(CXXFLAGS) $(foreach d,$(INCLUDE_DIRS),-I$(d)) \
+	    $^ $(LIBDIRS) $(LDFLAGS) $(LIBS) -o $@
 
-all: $(TARGET_ELF)
-
-# Правило сборки: из всех .cpp в единственный ELF
-$(TARGET_ELF): $(SRCS) $(HEADERS)
-	@echo "=== Компиляция PPSSPP360 с Libxenon ==="
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET_ELF) $(LDFLAGS)
+# Правило преобразования ELF в XEX (пример, требует наличия соответствующего инструмента)
+# elf2xbe - команда из Xbox 360 SDK/XDK. Замените при необходимости.
+%.xex: %.elf
+	$(CROSS_COMPILE)objcopy -O binary $< $*.bin
+	# Пример конвертации; на практике используйте elf2xbe или XexTool:
+	elf2xbe -o $@ $<
 
 clean:
-	@echo "=== Очистка старых артефактов ==="
-	rm -f $(TARGET_ELF) *.o
+	rm -f *.elf *.bin *.xex
 
-.PHONY: all clean
