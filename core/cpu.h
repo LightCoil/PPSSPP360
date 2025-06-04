@@ -1,31 +1,23 @@
-#pragma once
-#include <cstdint>
-#include "memory.h"
-#include "cpu_state.h"
+#ifndef CPU_H
+#define CPU_H
 
-namespace core {
+#include "ppc_memory.h"   // чтобы был доступ к PPCMemory
+#include "cpu_state.h"    // чтобы был доступ к CPUState
 
 class CPU {
 public:
-    CPU(Memory &mem, CPUState &state);
-    void ExecuteInstruction();       // Интерпретатор: выполнить 1 инструкцию
-    void Run(int cycles);            // Запустить интерпретатор на N инструкций
+    // Раньше могло стоять: CPU(Memory &mem, CPUState &state);
+    // Здесь заменили Memory на PPCMemory:
+    CPU(PPCMemory& mem, CPUState& state);
+    ~CPU();
+
+    // Основные методы эмуляции
+    void Step();       // выполнить один шаг (инструкцию)
+    void Reset();
 
 private:
-    Memory &memory_;
-    CPUState &state_;
-
-    uint32_t FetchInstruction();
-    void DecodeAndExecute(uint32_t instr);
-
-    // Группы инструкций
-    void ExecuteSPECIAL(uint32_t instr);
-    void ExecuteREGIMM(uint32_t instr);
-    void ExecuteJType(uint32_t instr);
-    void ExecuteIType(uint32_t instr);
-
-    // Вспомогательные для работы с регистрами
-    uint32_t &GPR(int index) { return state_.GPR[index]; }
+    PPCMemory& memory_;
+    CPUState&  state_;
 };
 
-} // namespace core
+#endif // CPU_H
