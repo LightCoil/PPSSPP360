@@ -1,23 +1,22 @@
-# PPSSPP360 Корневой Makefile для сборки на Xbox 360 (Xbox 360 Command Prompt)
-# Предполагается, что установлен devkit с libxenon
+# PPSSPP360 Корневой Makefile для сборки на Xbox 360 с libxenon
 
-# Путь к корню исходников
 ROOT := .
 
 # Директории исходников
-CORE := $(ROOT)/core
-JIT  := $(ROOT)/jit
-UI   := $(ROOT)/ui
-GFX  := $(ROOT)/gfx
-HLE  := $(ROOT)/hle
-UMD  := $(ROOT)/umd
+CORE  := $(ROOT)/core
+JIT   := $(ROOT)/jit
+UI    := $(ROOT)/ui
+GFX   := $(ROOT)/gfx
+HLE   := $(ROOT)/hle
+UMD   := $(ROOT)/umd
 AUDIO := $(ROOT)/audio
+LOCALE := $(ROOT)/locale
 
-# Компилятор и флаги (примерные, для libxenon)
-CC    := g++
-CXX   := g++
-AR    := ar
-CFLAGS  := -std=c++17 -O2 -Wall
+# Компилятор и флаги (для libxenon)
+CXX     := xenon-g++
+AR      := xenon-ar
+CFLAGS  := -std=c++17 -O2 -Wall -D__LIBXENON__ \
+           -I$(CORE) -I$(JIT) -I$(UI) -I$(GFX) -I$(HLE) -I$(UMD) -I$(AUDIO) -I$(LOCALE) -I. 
 LDFLAGS := -lxenon -lxenos -lxaudio2 -lpng
 
 # Все исходники
@@ -61,70 +60,28 @@ SRCS := \
     $(UI)/ui_statesmenu.cpp \
     $(UI)/ui_slider.cpp \
     \
+    $(LOCALE)/locale.cpp \
+    \
     psp_display.cpp \
-    psp_input.cpp \
+    save_state_util.cpp \
     main.cpp
-
-# Заголовки
-HEADERS := \
-    $(CORE)/cpu_state.h \
-    $(CORE)/memory.h \
-    $(CORE)/cpu.h \
-    $(CORE)/psp_cpu.h \
-    $(CORE)/ppc_memory.h \
-    $(CORE)/loader.h \
-    $(CORE)/decoder.h \
-    $(CORE)/syscall_handler.h \
-    $(CORE)/save_state.h \
-    $(CORE)/config.h \
-    $(CORE)/iso_util.h \
-    $(CORE)/iso_reader.h \
-    \
-    $(JIT)/jit_block.h \
-    $(JIT)/jit_block_cache.h \
-    $(JIT)/jit_cache_xbox360.h \
-    $(JIT)/jit_emitter.h \
-    $(JIT)/jit_compiler.h \
-    $(JIT)/jit_runtime.h \
-    $(JIT)/jit_interrupt_bridge.h \
-    \
-    $(HLE)/hle_eboot_loader.h \
-    $(HLE)/hle_kernel.h \
-    \
-    $(UMD)/umd_mount.h \
-    \
-    $(AUDIO)/audio_output.h \
-    \
-    $(GFX)/texture_utils.h \
-    \
-    $(UI)/ui_element.h \
-    $(UI)/ui_manager.h \
-    $(UI)/ui_renderer.h \
-    $(UI)/ui_mainmenu.h \
-    $(UI)/ui_pausemenu.h \
-    $(UI)/ui_gamebrowser.h \
-    $(UI)/ui_settingsmenu.h \
-    $(UI)/ui_statesmenu.h \
-    $(UI)/ui_slider.h \
-    \
-    psp_display.h \
-    psp_input.h \
-    locale/locale.h
 
 # Объектные файлы
 OBJS := $(SRCS:.cpp=.o)
 
-# Название исполняемого файла
+# Целевой исполняемый файл
 TARGET := ppsspp360.elf
 
+# Сборка по умолчанию
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
-%.o: %.cpp $(HEADERS)
+%.o: %.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@
 
+# Очистка
 clean:
 	rm -f $(OBJS) $(TARGET)
 
