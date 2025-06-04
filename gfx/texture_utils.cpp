@@ -1,55 +1,34 @@
-#include "texture_utils.h"
-#include <png.h>
-#include <cstdlib>
-#include <cstring>
-#include <xenos/xe.h>
-#include <xenos/xenos.h>
-#include <vector>
+#pragma once
 
-// Простейшая реализация: декодируем PNG через libpng, загружаем на Xenos
+#include <stdint.h>
+#include <stddef.h>
 
-uint8_t* DecodePNG(const uint8_t *data, size_t size, int *outW, int *outH) {
-    png_image image;
-    memset(&image, 0, sizeof(image));
-    image.version = PNG_IMAGE_VERSION;
-    if (!png_image_begin_read_from_memory(&image, data, size))
-        return nullptr;
-    image.format = PNG_FORMAT_RGBA;
-    png_bytep buffer = (png_bytep)malloc(PNG_IMAGE_SIZE(image));
-    if (!buffer) return nullptr;
-    if (!png_image_finish_read(&image, nullptr, buffer, 0, nullptr)) {
-        free(buffer);
-        return nullptr;
-    }
-    *outW = image.width;
-    *outH = image.height;
-    return buffer;
-}
+enum class RenderBackend {
+    XENON_GPU,
+    SOFTWARE
+};
 
-uint32_t UploadTexture(const uint8_t *rgba, int w, int h) {
-    XenosSurface *surf = XenosSurface_Create(w, h, 4, XENON_SURFACE_FMT_8888);
-    if (!surf) return 0;
-    xenos_surface_upload(surf, rgba, w * 4);
-    return (uint32_t)surf;
-}
+struct FrameBuffer {
+    void *colorBuffer;
+    void *depthBuffer;
+    int width;
+    int height;
+};
 
-uint32_t LoadPNG(const std::vector<uint8_t> &pngData) {
-    int w, h;
-    uint8_t *rgba = DecodePNG(pngData.data(), pngData.size(), &w, &h);
-    if (!rgba) return 0;
-    uint32_t tex = UploadTexture(rgba, w, h);
-    free(rgba);
-    return tex;
-}
+class Renderer {
+public:
+    virtual ~Renderer() {}
 
-void Texture_Draw(uint32_t texId, float x, float y, float w, float h) {
-    XenosSurface *surf = (XenosSurface*)texId;
-    if (!surf) return;
-    // Простейший квад: (используя XenosDrawQuad)
-    xenos_draw_texture(x, y, w, h, surf, 0);
-}
+    virtual bool Initialize(int width, int height) = 0;
+    virtual void Shutdown() = 0;
 
-void Texture_Free(uint32_t texId) {
-    XenosSurface *surf = (XenosSurface*)texId;
-    if (surf) xenos_surface_destroy(surf);
-}
+    virtual void BeginFrame() = 0;
+    virtual void EndFrame() = 0;
+
+    virtual void Clear(uint32_t color) = 0;
+    virtual void DrawTriangleList(const void* vertices, size_t count) = 0;
+
+    virtual FrameBuffer* GetCurrentFrameBuffer() = 0;
+
+    static Renderer* Create(RenderBackend backend);
+};
