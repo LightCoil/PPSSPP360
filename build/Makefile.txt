@@ -1,0 +1,131 @@
+# PPSSPP360 Корневой Makefile для сборки на Xbox 360 (Xbox 360 Command Prompt)
+# Предполагается, что установлен devkit с libxenon
+
+# Путь к корню исходников
+ROOT := .
+
+# Директории исходников
+CORE := $(ROOT)/core
+JIT  := $(ROOT)/jit
+UI   := $(ROOT)/ui
+GFX  := $(ROOT)/gfx
+HLE  := $(ROOT)/hle
+UMD  := $(ROOT)/umd
+AUDIO := $(ROOT)/audio
+
+# Компилятор и флаги (примерные, для libxenon)
+CC    := g++
+CXX   := g++
+AR    := ar
+CFLAGS  := -std=c++17 -O2 -Wall
+LDFLAGS := -lxenon -lxenos -lxaudio2 -lpng
+
+# Все исходники
+SRCS := \
+    $(CORE)/cpu_state.cpp \
+    $(CORE)/memory.cpp \
+    $(CORE)/cpu.cpp \
+    $(CORE)/psp_cpu.cpp \
+    $(CORE)/ppc_memory.cpp \
+    $(CORE)/loader.cpp \
+    $(CORE)/decoder.cpp \
+    $(CORE)/syscall_handler.cpp \
+    $(CORE)/save_state.cpp \
+    $(CORE)/config.cpp \
+    $(CORE)/iso_util.cpp \
+    $(CORE)/iso_reader.cpp \
+    \
+    $(JIT)/jit_block.cpp \
+    $(JIT)/jit_block_cache.cpp \
+    $(JIT)/jit_cache_xbox360.cpp \
+    $(JIT)/jit_emitter.cpp \
+    $(JIT)/jit_compiler.cpp \
+    $(JIT)/jit_runtime.cpp \
+    $(JIT)/jit_interrupt_bridge.cpp \
+    \
+    $(HLE)/hle_eboot_loader.cpp \
+    $(HLE)/hle_kernel.cpp \
+    \
+    $(UMD)/umd_mount.cpp \
+    \
+    $(AUDIO)/audio_output.cpp \
+    \
+    $(GFX)/texture_utils.cpp \
+    \
+    $(UI)/ui_manager.cpp \
+    $(UI)/ui_renderer.cpp \
+    $(UI)/ui_mainmenu.cpp \
+    $(UI)/ui_pausemenu.cpp \
+    $(UI)/ui_gamebrowser.cpp \
+    $(UI)/ui_settingsmenu.cpp \
+    $(UI)/ui_statesmenu.cpp \
+    $(UI)/ui_slider.cpp \
+    \
+    psp_display.cpp \
+    psp_input.cpp \
+    main.cpp
+
+# Заголовки
+HEADERS := \
+    $(CORE)/cpu_state.h \
+    $(CORE)/memory.h \
+    $(CORE)/cpu.h \
+    $(CORE)/psp_cpu.h \
+    $(CORE)/ppc_memory.h \
+    $(CORE)/loader.h \
+    $(CORE)/decoder.h \
+    $(CORE)/syscall_handler.h \
+    $(CORE)/save_state.h \
+    $(CORE)/config.h \
+    $(CORE)/iso_util.h \
+    $(CORE)/iso_reader.h \
+    \
+    $(JIT)/jit_block.h \
+    $(JIT)/jit_block_cache.h \
+    $(JIT)/jit_cache_xbox360.h \
+    $(JIT)/jit_emitter.h \
+    $(JIT)/jit_compiler.h \
+    $(JIT)/jit_runtime.h \
+    $(JIT)/jit_interrupt_bridge.h \
+    \
+    $(HLE)/hle_eboot_loader.h \
+    $(HLE)/hle_kernel.h \
+    \
+    $(UMD)/umd_mount.h \
+    \
+    $(AUDIO)/audio_output.h \
+    \
+    $(GFX)/texture_utils.h \
+    \
+    $(UI)/ui_element.h \
+    $(UI)/ui_manager.h \
+    $(UI)/ui_renderer.h \
+    $(UI)/ui_mainmenu.h \
+    $(UI)/ui_pausemenu.h \
+    $(UI)/ui_gamebrowser.h \
+    $(UI)/ui_settingsmenu.h \
+    $(UI)/ui_statesmenu.h \
+    $(UI)/ui_slider.h \
+    \
+    psp_display.h \
+    psp_input.h \
+    locale/locale.h
+
+# Объектные файлы
+OBJS := $(SRCS:.cpp=.o)
+
+# Название исполняемого файла
+TARGET := ppsspp360.elf
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+
+%.o: %.cpp $(HEADERS)
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(TARGET)
+
+.PHONY: all clean
