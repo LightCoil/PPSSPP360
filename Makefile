@@ -60,8 +60,7 @@ SRCS := \
   $(GFX_DIR)/texture_utils.cpp \
   $(GFX_DIR)/render.cpp \
   \
-  $(GLES_DIR)/gles_shader.cpp \
-  $(GLES_DIR)/gles_renderer.cpp \
+  $(GLES_DIR)/gl_utils.cpp \
   \
   $(UI_DIR)/ui_manager.cpp \
   $(UI_DIR)/ui_renderer.cpp \
