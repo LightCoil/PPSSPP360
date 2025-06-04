@@ -8,6 +8,7 @@ CXXFLAGS     := -std=gnu++11 -O2 -Wall -Wextra \
                 -Ijit \
                 -Iui \
                 -Iumd \
+                -Iplatform \
                 -I./      # если понадобятся файлы в корне (например, save_state_util)
 
 # ------------------------------------------------
@@ -26,6 +27,7 @@ HLE_DIR      := hle
 JIT_DIR      := jit
 UI_DIR       := ui
 UMD_DIR      := umd
+PLATFORM_DIR := platform
 
 # ------------------------------------------------
 # Список всех исходников (.cpp)
@@ -56,7 +58,7 @@ SRCS := \
   $(AUDIO_DIR)/audio_output.cpp \
   \
   $(GFX_DIR)/texture_utils.cpp \
-  $(GFX_DIR)/renderer.cpp \
+  $(GFX_DIR)/render.cpp \
   \
   $(GLES_DIR)/gles_shader.cpp \
   $(GLES_DIR)/gles_renderer.cpp \
@@ -69,6 +71,8 @@ SRCS := \
   $(UI_DIR)/ui_settingsmenu.cpp \
   $(UI_DIR)/ui_statesmenu.cpp \
   $(UI_DIR)/ui_slider.cpp \
+  \
+  $(PLATFORM_DIR)/xenon_gpu.cpp \
   \
   main.cpp \
   save_state_util.cpp
@@ -84,7 +88,8 @@ HEADERS := \
   hle/*.h \
   jit/*.h \
   ui/*.h \
-  umd/*.h
+  umd/*.h \
+  platform/*.h
 
 # ------------------------------------------------
 # Цель: сборка ELF-бинарника для Xenon
