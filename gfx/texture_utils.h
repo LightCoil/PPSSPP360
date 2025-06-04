@@ -1,18 +1,35 @@
+// gfx/render.h
 #pragma once
-#include <cstdint>
-#include <vector>
 
-// Загрузка PNG в память, возвращает указатель на RGBA (4 байта на пиксель)
-uint8_t* DecodePNG(const uint8_t *data, size_t size, int *outW, int *outH);
+#include <stdint.h>
+#include <stddef.h>
 
-// Загрузить PNG-данные в текстуру Xenos, вернуть texId
-uint32_t UploadTexture(const uint8_t *rgba, int w, int h);
+enum class RenderBackend {
+    XENON_GPU,
+    SOFTWARE
+};
 
-// Удобный хелпер: принимает вектор байт PNG и возвращает texId
-uint32_t LoadPNG(const std::vector<uint8_t> &pngData);
+struct FrameBuffer {
+    void *colorBuffer;
+    void *depthBuffer;
+    int width;
+    int height;
+};
 
-// Нарисовать текстуру (полупрозрачный квадрат) в UI
-void Texture_Draw(uint32_t texId, float x, float y, float w, float h);
+class Renderer {
+public:
+    virtual ~Renderer() {}
 
-// Освободить текстуру
-void Texture_Free(uint32_t texId);
+    virtual bool Initialize(int width, int height) = 0;
+    virtual void Shutdown() = 0;
+
+    virtual void BeginFrame() = 0;
+    virtual void EndFrame() = 0;
+
+    virtual void Clear(uint32_t color) = 0;
+    virtual void DrawTriangleList(const void* vertices, size_t count) = 0;
+
+    virtual FrameBuffer* GetCurrentFrameBuffer() = 0;
+
+    static Renderer* Create(RenderBackend backend);
+};
