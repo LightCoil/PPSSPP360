@@ -1,40 +1,75 @@
-# Makefile для PPSSPP360 на Xbox 360 (libXenon)
-CROSS_COMPILE ?= xenon-               # префикс кросс-компилятора (можно задать извне)
-CC := $(CROSS_COMPILE)gcc
-CXX := $(CROSS_COMPILE)g++
-AR := $(CROSS_COMPILE)ar
+TARGET := ppsspp360
+BUILD  := build
+CXX    := $(CROSS_COMPILE)g++
+CC     := $(CROSS_COMPILE)gcc
+AS     := $(CROSS_COMPILE)as
+LD     := $(CROSS_COMPILE)ld
+AR     := $(CROSS_COMPILE)ar
+STRIP  := $(CROSS_COMPILE)strip
 
-# Пути к исходникам
-SRC_DIRS := core gfx gles hle jit locale platform ui umd build audio
-SOURCES := \
-    main.cpp main_jit.cpp psp_display.cpp save_state_util.cpp \
-    $(foreach d,$(SRC_DIRS),$(wildcard $(d)/*.cpp))
+CROSS_COMPILE ?= xenon-
 
-# Опции компиляции
-CXXFLAGS := -O2 -std=gnu++11 -Wall -fno-exceptions -fno-rtti \
-    -m32 -D__LIBXENON__ -D__ppc__ -DMSB_FIRST -DBYTE_ORDER=BIG_ENDIAN
-INCLUDE_DIRS := 
+CFLAGS := -O2 -std=gnu++11 -Wall -fno-exceptions -fno-rtti -m32 \
+          -D__LIBXENON__ -D__ppc__ -DMSB_FIRST -DBYTE_ORDER=BIG_ENDIAN
 
-# Опции линковки
-LDFLAGS := -m32 
-LIBDIRS := 
-LIBS := -lxenos -lconsole -linput -lusb -lxenon
+LDFLAGS := -m32 -lxenos -lconsole -linput -lusb -lxenon
 
-# Цель по умолчанию: собираем исходники в default.elf
-all: default.elf
+SRC := \
+    main.cpp \
+    main_jit.cpp \
+    psp_display.cpp \
+    save_state_util.cpp \
+    core/config.cpp \
+    core/cpu.cpp \
+    core/cpu_state.cpp \
+    core/decoder.cpp \
+    core/iso_reader.cpp \
+    core/iso_util.cpp \
+    core/loader.cpp \
+    core/ppc_memory.cpp \
+    core/psp_cpu.cpp \
+    core/save_state.cpp \
+    core/syscall_handler.cpp \
+    gfx/render.cpp \
+    gfx/texture_utils.cpp \
+    gles/gl_utils.cpp \
+    hle/hle_eboot_loader.cpp \
+    hle/hle_kernel.cpp \
+    jit/jit_block.cpp \
+    jit/jit_block_cache.cpp \
+    jit/jit_cache_xbox360.cpp \
+    jit/jit_compiler.cpp \
+    jit/jit_emitter.cpp \
+    jit/jit_interrupt_bridge.cpp \
+    jit/jit_runtime.cpp \
+    locale/locale.cpp \
+    platform/xenon_gpu.cpp \
+    ui/ui_gamebrowser.cpp \
+    ui/ui_mainmenu.cpp \
+    ui/ui_manager.cpp \
+    ui/ui_pausemenu.cpp \
+    ui/ui_renderer.cpp \
+    ui/ui_settingsmenu.cpp \
+    ui/ui_slider.cpp \
+    ui/ui_statesmenu.cpp \
+    umd/umd_mount.cpp \
+    audio/audio_output.cpp
 
-# Правило сборки ELF-файла
-default.elf: $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(foreach d,$(INCLUDE_DIRS),-I$(d)) \
-	    $^ $(LIBDIRS) $(LDFLAGS) $(LIBS) -o $@
+OBJ := $(SRC:%.cpp=$(BUILD)/%.o)
 
-# Правило преобразования ELF в XEX (пример, требует наличия соответствующего инструмента)
-# elf2xbe - команда из Xbox 360 SDK/XDK. Замените при необходимости.
-%.xex: %.elf
-	$(CROSS_COMPILE)objcopy -O binary $< $*.bin
-	# Пример конвертации; на практике используйте elf2xbe или XexTool:
-	elf2xbe -o $@ $<
+.PHONY: all clean dirs
+
+all: dirs $(TARGET).elf
+
+dirs:
+	mkdir -p $(BUILD)
+
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+$(TARGET).elf: $(OBJ)
+	$(CXX) $(OBJ) -o $@ $(LDFLAGS)
 
 clean:
-	rm -f *.elf *.bin *.xex
-
+	rm -rf $(BUILD) $(TARGET).elf
