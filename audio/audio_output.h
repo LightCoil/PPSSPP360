@@ -1,14 +1,11 @@
 #ifndef AUDIO_OUTPUT_H
 #define AUDIO_OUTPUT_H
 
-#include <stdint.h>   // для uint8_t, uint32_t и т.п.
-#include <XAudio2.h>  // Portable XAudio2 (libxenon предоставляет этот заголовок)
-#include <xboxkrnl/xboxkrnl.h>  // для типовых Xbox-определений (LPVOID и т.п.)
+#include <stdint.h>
+#include <xaudio2/xaudio2.h>  // Используем правильный путь для libxenon
+#include <xboxkrnl/xboxkrnl.h>
 
-// Если libxenon не содержит точно такого пути, можно использовать <xaudio2p.h>:
-// #include <xaudio2p.h>
-
-typedef uint8_t BYTE;  // На всякий случай, если BYTE не определён
+typedef uint8_t BYTE;
 
 class AudioOutput {
 public:
@@ -16,18 +13,17 @@ public:
     ~AudioOutput();
 
     bool Initialize(uint32_t sampleRate, uint32_t channels);
-    void   Shutdown();
+    void Shutdown();
 
-    // Передаёт буфер с PCM-данными на воспроизведение
     bool SubmitBuffer(const BYTE* pcmData, size_t length);
 
 private:
-    IXAudio2*            xaudio2_;
+    IXAudio2* xaudio2_;
     IXAudio2SourceVoice* sourceVoice_;
     IXAudio2MasteringVoice* masteringVoice_;
 
-    uint32_t             sampleRate_;
-    uint32_t             channelCount_;
+    uint32_t sampleRate_;
+    uint32_t channelCount_;
 };
 
 #endif // AUDIO_OUTPUT_H
